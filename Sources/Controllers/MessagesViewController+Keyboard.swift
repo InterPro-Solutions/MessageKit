@@ -31,17 +31,43 @@ internal extension MessagesViewController {
     // MARK: - Register / Unregister Observers
 
     func addKeyboardObservers() {
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(messageInputBarDidLayoutSubview(_:)), name: .messageInputBarDidLayoutSubviews, object: inputAccessoryView)
+        let token = messageInputBar.observe(\.center, options: .new, changeHandler: {
+            [weak self] inputBar, changedCenter in
+            guard let self = self else {
+                return
+            }
+            let inputViewFrame  = self.view.convert(inputBar.frame, from: inputBar.superview ?? self.view.window)
+
+            let newBottomInset = max(0, max (0, self.messagesCollectionView.frame.maxY - inputViewFrame.minY) + self.additionalBottomInset - self.automaticallyAddedBottomInset)
+            let differenceOfBottomInset = newBottomInset - self.messageCollectionViewBottomInset
+
+            defer {
+                UIView.performWithoutAnimation {
+                    self.messageCollectionViewBottomInset = newBottomInset
+                }
+            }
+            if self.maintainPositionOnKeyboardFrameChanged && differenceOfBottomInset != 0 {
+                let contentOffset = CGPoint(x: self.messagesCollectionView.contentOffset.x, y: self.messagesCollectionView.contentOffset.y + differenceOfBottomInset)
+                    // Changing contentOffset to bigger number than the contentSize will result in a jump of content
+                    // https://github.com/MessageKit/MessageKit/issues/1486
+                guard contentOffset.y <= self.messagesCollectionView.contentSize.height else {
+                    return
+                }
+                self.messagesCollectionView.setContentOffset(contentOffset, animated: false)
+            }
+        })
+        self.kvoTokenSet.insert(token)
         //NotificationCenter.default.addObserver(self, selector: #selector(MessagesViewController.handleKeyboardDidChangeState(_:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(MessagesViewController.handleTextViewDidBeginEditing(_:)), name: UITextView.textDidBeginEditingNotification, object: nil)
     }
 
     func removeKeyboardObservers() {
-        
-        NotificationCenter.default.removeObserver(self, name: .messageInputBarDidLayoutSubviews, object: inputAccessoryView)
-        //NotificationCenter.default.removeObserver(self, name: UITextView.textDidBeginEditingNotification, object: nil)
+        //NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UITextView.textDidBeginEditingNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+        for token in kvoTokenSet{
+            token.invalidate()
+        }
     }
 
     @objc

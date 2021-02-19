@@ -35,7 +35,7 @@ UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIGestureRecogni
     open var messagesCollectionView = MessagesCollectionView()
 
     /// The `InputBarAccessoryView` used as the `inputAccessoryView` in the view controller.
-    open lazy var messageInputBar = MessageInputBar()
+    open lazy var messageInputBar = InputBarAccessoryView()
 
     /// A Boolean value that determines whether the `MessagesCollectionView` scrolls to the
     /// last item whenever the `InputTextView` begins editing.
@@ -73,6 +73,9 @@ UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIGestureRecogni
 
     /// Pan gesture for display the date of message by swiping left.
     private var panGesture: UIPanGestureRecognizer?
+
+    /// Save swift kvo Token
+    internal var kvoTokenSet = Set<NSKeyValueObservation>()
 
     open override var canBecomeFirstResponder: Bool {
         return true
