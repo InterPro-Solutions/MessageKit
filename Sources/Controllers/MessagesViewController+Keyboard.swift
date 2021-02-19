@@ -31,14 +31,40 @@ internal extension MessagesViewController {
     // MARK: - Register / Unregister Observers
 
     func addKeyboardObservers() {
-        NotificationCenter.default.addObserver(self, selector: #selector(MessagesViewController.handleKeyboardDidChangeState(_:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(messageInputBarDidLayoutSubview(_:)), name: .messageInputBarDidLayoutSubviews, object: inputAccessoryView)
+        //NotificationCenter.default.addObserver(self, selector: #selector(MessagesViewController.handleKeyboardDidChangeState(_:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(MessagesViewController.handleTextViewDidBeginEditing(_:)), name: UITextView.textDidBeginEditingNotification, object: nil)
     }
 
     func removeKeyboardObservers() {
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
-        NotificationCenter.default.removeObserver(self, name: UITextView.textDidBeginEditingNotification, object: nil)
+        
+        NotificationCenter.default.removeObserver(self, name: .messageInputBarDidLayoutSubviews, object: inputAccessoryView)
+        //NotificationCenter.default.removeObserver(self, name: UITextView.textDidBeginEditingNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+    }
+
+    @objc
+    private func messageInputBarDidLayoutSubview(_ notification: Notification) {
+        let inputViewFrame  = view.convert(messageInputBar.frame, from: messageInputBar.superview ?? view.window)
+
+        let newBottomInset = max(0, max (0, messagesCollectionView.frame.maxY - inputViewFrame.minY) + additionalBottomInset - automaticallyAddedBottomInset)
+        let differenceOfBottomInset = newBottomInset - messageCollectionViewBottomInset
+
+        defer {
+            UIView.performWithoutAnimation {
+                messageCollectionViewBottomInset = newBottomInset
+            }
+        }
+        if maintainPositionOnKeyboardFrameChanged && differenceOfBottomInset != 0 {
+            let contentOffset = CGPoint(x: messagesCollectionView.contentOffset.x, y: messagesCollectionView.contentOffset.y + differenceOfBottomInset)
+                // Changing contentOffset to bigger number than the contentSize will result in a jump of content
+                // https://github.com/MessageKit/MessageKit/issues/1486
+            guard contentOffset.y <= messagesCollectionView.contentSize.height else {
+                return
+            }
+            messagesCollectionView.setContentOffset(contentOffset, animated: false)
+        }
     }
 
     // MARK: - Notification Handlers
@@ -119,15 +145,21 @@ internal extension MessagesViewController {
     private func requiredScrollViewBottomInset(forKeyboardFrame keyboardFrame: CGRect) -> CGFloat {
         // we only need to adjust for the part of the keyboard that covers (i.e. intersects) our collection view;
         // see https://developer.apple.com/videos/play/wwdc2017/242/ for more details
-        let intersection = messagesCollectionView.frame.intersection(keyboardFrame)
+        let intersectionWithKeyboard = messagesCollectionView.frame.intersection(keyboardFrame)
+        let messagesViewFrame = messagesCollectionView.frame
 
-        if intersection.isNull || (messagesCollectionView.frame.maxY - intersection.maxY) > 0.001 {
+        print("maxY:\(messagesViewFrame.maxY),height:\(messagesViewFrame.height)")
+        var result : CGFloat = 0
+        if intersectionWithKeyboard.isNull || (messagesCollectionView.frame.maxY - intersectionWithKeyboard.maxY) > 0.001 {
             // The keyboard is hidden, is a hardware one, or is undocked and does not cover the bottom of the collection view.
             // Note: intersection.maxY may be less than messagesCollectionView.frame.maxY when dealing with undocked keyboards.
-            return max(0, additionalBottomInset - automaticallyAddedBottomInset)
+
+            result = max(0, additionalBottomInset - automaticallyAddedBottomInset)
         } else {
-            return max(0, intersection.height + additionalBottomInset - automaticallyAddedBottomInset)
+            result = max(0, intersectionWithKeyboard.height + additionalBottomInset - automaticallyAddedBottomInset)
         }
+        print("result: \(result)")
+        return result
     }
 
     func requiredInitialScrollViewBottomInset() -> CGFloat {

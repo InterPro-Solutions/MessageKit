@@ -25,8 +25,21 @@
 import UIKit
 import InputBarAccessoryView
 
-@available(*, unavailable, renamed: "InputBarAccessoryView")
-public typealias MessageInputBar = InputBarAccessoryView
+//@available(*, unavailable, renamed: "InputBarAccessoryView")
+//public typealias MessageInputBar = InputBarAccessoryView
+
+extension Notification.Name {
+    static let messageInputBarDidLayoutSubviews = Notification.Name("messageInputBarDidLayoutSubviews")
+}
+public class MessageInputBar : InputBarAccessoryView {
+    public override func draw(_ rect: CGRect) {
+        super.draw(rect)
+    }
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        NotificationCenter.default.post(name: .messageInputBarDidLayoutSubviews, object: self)
+    }
+}
 
 @available(*, unavailable, renamed: "InputBarAccessoryViewDelegate")
 public typealias MessageInputBarDelegate = InputBarAccessoryViewDelegate
