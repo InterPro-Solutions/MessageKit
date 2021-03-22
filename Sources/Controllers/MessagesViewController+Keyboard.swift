@@ -150,11 +150,10 @@ internal extension MessagesViewController {
         let newBottomInset = requiredScrollViewBottomInset(forKeyboardFrame: keyboardEndFrame)
         let differenceOfBottomInset = newBottomInset - messageCollectionViewBottomInset
 
-        defer {
-            UIView.performWithoutAnimation {
-                messageCollectionViewBottomInset = newBottomInset
-            }
+        UIView.performWithoutAnimation {
+            messageCollectionViewBottomInset = newBottomInset
         }
+        
         if maintainPositionOnKeyboardFrameChanged && differenceOfBottomInset != 0 {
             let contentOffset = CGPoint(x: messagesCollectionView.contentOffset.x, y: messagesCollectionView.contentOffset.y + differenceOfBottomInset)
             // Changing contentOffset to bigger number than the contentSize will result in a jump of content
