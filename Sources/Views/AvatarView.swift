@@ -25,10 +25,16 @@
 import Foundation
 import UIKit
 
+internal struct InitialAvatarInfo : Hashable {
+    let name : String
+    let width : CGFloat
+    let height : CGFloat
+}
+
 open class AvatarView: UIImageView {
 
     // MARK: - Properties
-    
+    internal static var initialAvatarCache = Dictionary<InitialAvatarInfo,UIImage>()
     open var initials: String? {
         didSet {
             setImageFrom(initials: initials)
@@ -95,6 +101,9 @@ open class AvatarView: UIImageView {
         let width = frame.width
         let height = frame.height
         if width == 0 || height == 0 {return UIImage()}
+        if let cachedImage = Self.initialAvatarCache[InitialAvatarInfo(name: initials, width: width, height: height)]{
+            return cachedImage
+        }
         var font = placeholderFont
 
         UIGraphicsBeginImageContextWithOptions(CGSize(width: width, height: height), false, UIScreen.main.scale)
@@ -120,6 +129,7 @@ open class AvatarView: UIImageView {
         initials.draw(in: CGRect(textRect.minX, textRect.minY + (textRect.height - textTextHeight) / 2, textRect.width, textTextHeight), withAttributes: textFontAttributes)
         context.restoreGState()
         guard let renderedImage = UIGraphicsGetImageFromCurrentImageContext() else { assertionFailure("Could not create image from context"); return UIImage()}
+        Self.initialAvatarCache[InitialAvatarInfo(name: initials, width: width, height: height)] = renderedImage
         return renderedImage
     }
 

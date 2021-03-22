@@ -30,3 +30,4 @@ public typealias MessageInputBar = InputBarAccessoryView
 
 @available(*, unavailable, renamed: "InputBarAccessoryViewDelegate")
 public typealias MessageInputBarDelegate = InputBarAccessoryViewDelegate
+
