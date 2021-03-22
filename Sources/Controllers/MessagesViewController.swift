@@ -44,6 +44,12 @@ UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIGestureRecogni
     /// NOTE: This is related to `scrollToLastItem` whereas the below flag is related to `scrollToBottom` - check each function for differences
     open var scrollsToLastItemOnKeyboardBeginsEditing: Bool = false
 
+    /// A Boolean value that determines whether the `InputBarAccessoryView` resign first responder
+    /// when the pan gesture `MessagesCollectionView` begins.
+    ///
+    /// The default value of this property is `true`.
+    public var dimissKeyboardOfInputBarOnPanGesture: Bool = true
+
     /// A Boolean value that determines whether the `MessagesCollectionView` scrolls to the
     /// bottom whenever the `InputTextView` begins editing.
     ///
@@ -73,6 +79,9 @@ UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIGestureRecogni
 
     /// Pan gesture for display the date of message by swiping left.
     private var panGesture: UIPanGestureRecognizer?
+
+    /// Save swift kvo Token
+    internal var kvoTokenSet = Set<NSKeyValueObservation>()
 
     open override var canBecomeFirstResponder: Bool {
         return true
@@ -147,6 +156,7 @@ UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIGestureRecogni
     open override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         isMessagesControllerBeingDismissed = false
+        AvatarView.initialAvatarCache.removeAll()
     }
     
     open override func viewDidLayoutSubviews() {
@@ -502,6 +512,9 @@ UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIGestureRecogni
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else {
             return false
+        }
+        if self.dimissKeyboardOfInputBarOnPanGesture == true{
+            self.messageInputBar.inputTextView.resignFirstResponder()
         }
         let velocity = panGesture.velocity(in: messagesCollectionView)
         return abs(velocity.x) > abs(velocity.y)
