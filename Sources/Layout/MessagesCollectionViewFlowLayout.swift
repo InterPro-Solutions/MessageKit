@@ -60,7 +60,8 @@ open class MessagesCollectionViewFlowLayout: UICollectionViewFlowLayout {
 
     public var itemWidth: CGFloat {
         guard let collectionView = collectionView else { return 0 }
-        return collectionView.frame.width - sectionInset.left - sectionInset.right
+        let result = collectionView.frame.width - sectionInset.left - sectionInset.right
+        return result < 0 ? 0 : result
     }
 
     public private(set) var isTypingIndicatorViewHidden: Bool = true
